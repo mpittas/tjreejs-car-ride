@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Three.js Top-Down Car Control</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+      canvas {
+        display: block;
+      }
+      #info {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 15px;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="info">
+      <strong>Controls:</strong><br />
+      W/↑ - Forward<br />
+      S/↓ - Backward<br />
+      A/← - Steer Left<br />
+      D/→ - Steer Right
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      // Scene setup
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x87ceeb);
+
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      scene.add(ambientLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      directionalLight.position.set(10, 20, 10);
+      directionalLight.castShadow = true;
+      directionalLight.shadow.camera.left = -50;
+      directionalLight.shadow.camera.right = 50;
+      directionalLight.shadow.camera.top = 50;
+      directionalLight.shadow.camera.bottom = -50;
+      scene.add(directionalLight);
+
+      // Ground
+      const groundGeometry = new THREE.PlaneGeometry(100, 100);
+      const groundMaterial = new THREE.MeshStandardMaterial({
+        color: 0x228b22,
+        roughness: 0.8,
+      });
+      const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+      ground.rotation.x = -Math.PI / 2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      // Add grid for reference
+      const gridHelper = new THREE.GridHelper(100, 50, 0x444444, 0x888888);
+      scene.add(gridHelper);
+
+      // Create simple jeep/car
+      const car = new THREE.Group();
+
+      // Car body
+      const bodyGeometry = new THREE.BoxGeometry(2, 0.8, 3);
+      const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0xff4444 });
+      const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+      body.position.y = 0.7;
+      body.castShadow = true;
+      car.add(body);
+
+      // Car cabin
+      const cabinGeometry = new THREE.BoxGeometry(1.6, 0.8, 1.8);
+      const cabinMaterial = new THREE.MeshStandardMaterial({ color: 0x444444 });
+      const cabin = new THREE.Mesh(cabinGeometry, cabinMaterial);
+      cabin.position.y = 1.3;
+      cabin.position.z = -0.2;
+      cabin.castShadow = true;
+      car.add(cabin);
+
+      // Create wheel geometry
+      const wheelGeometry = new THREE.CylinderGeometry(0.4, 0.4, 0.3, 16);
+      const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x222222 });
+
+      // Front left wheel (steerable)
+      const frontLeftWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+      frontLeftWheel.rotation.z = Math.PI / 2;
+      frontLeftWheel.position.set(-1, 0.4, 1);
+      frontLeftWheel.castShadow = true;
+      car.add(frontLeftWheel);
+
+      // Front right wheel (steerable)
+      const frontRightWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+      frontRightWheel.rotation.z = Math.PI / 2;
+      frontRightWheel.position.set(1, 0.4, 1);
+      frontRightWheel.castShadow = true;
+      car.add(frontRightWheel);
+
+      // Back left wheel
+      const backLeftWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+      backLeftWheel.rotation.z = Math.PI / 2;
+      backLeftWheel.position.set(-1, 0.4, -1);
+      backLeftWheel.castShadow = true;
+      car.add(backLeftWheel);
+
+      // Back right wheel
+      const backRightWheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+      backRightWheel.rotation.z = Math.PI / 2;
+      backRightWheel.position.set(1, 0.4, -1);
+      backRightWheel.castShadow = true;
+      car.add(backRightWheel);
+
+      car.position.y = 0;
+      scene.add(car);
+
+      // Camera setup - top-down with slight angle
+      camera.position.set(0, 15, 10);
+      camera.lookAt(car.position);
+
+      // Controls
+      const keys = {
+        w: false,
+        a: false,
+        s: false,
+        d: false,
+        ArrowUp: false,
+        ArrowLeft: false,
+        ArrowDown: false,
+        ArrowRight: false,
+      };
+
+      document.addEventListener("keydown", (e) => {
+        const key = e.key.toLowerCase();
+        if (key in keys) keys[key] = true;
+        if (e.key in keys) keys[e.key] = true;
+      });
+
+      document.addEventListener("keyup", (e) => {
+        const key = e.key.toLowerCase();
+        if (key in keys) keys[key] = false;
+        if (e.key in keys) keys[e.key] = false;
+      });
+
+      // Car physics parameters
+      const carAcceleration = 0.008; // How fast the car accelerates
+      const maxSpeed = 0.25; // Maximum speed
+      const friction = 0.96; // Friction coefficient (0.96 = 4% speed loss per frame)
+      const maxSteerAngle = 0.6; // Maximum steering angle in radians
+      const steerSpeed = 0.08; // How fast steering wheel turns
+      const wheelBase = 2; // Distance between front and rear axles
+
+      let steerAngle = 0; // Current steering angle
+      let currentSpeed = 0; // Current forward speed (with inertia)
+
+      function updateCar() {
+        // Calculate target steering angle
+        let targetSteerAngle = 0;
+        if (keys.a || keys.ArrowLeft) {
+          targetSteerAngle = maxSteerAngle;
+        } else if (keys.d || keys.ArrowRight) {
+          targetSteerAngle = -maxSteerAngle;
+        }
+
+        // Smoothly interpolate steering angle
+        steerAngle += (targetSteerAngle - steerAngle) * steerSpeed;
+
+        // Apply steering to front wheels only
+        frontLeftWheel.rotation.y = steerAngle;
+        frontRightWheel.rotation.y = steerAngle;
+
+        // Calculate acceleration based on input
+        let targetAcceleration = 0;
+        if (keys.w || keys.ArrowUp) {
+          targetAcceleration = carAcceleration;
+        } else if (keys.s || keys.ArrowDown) {
+          targetAcceleration = -carAcceleration;
+        }
+
+        // Apply acceleration to current speed
+        currentSpeed += targetAcceleration;
+
+        // Apply friction (inertia/deceleration)
+        currentSpeed *= friction;
+
+        // Clamp speed to max speed
+        if (currentSpeed > maxSpeed) currentSpeed = maxSpeed;
+        if (currentSpeed < -maxSpeed) currentSpeed = -maxSpeed;
+
+        // Stop completely if speed is very low
+        if (Math.abs(currentSpeed) < 0.001) {
+          currentSpeed = 0;
+        }
+
+        // Only turn the car when it's actually moving
+        if (Math.abs(currentSpeed) > 0.001) {
+          // Calculate turning radius based on wheel angle
+          if (Math.abs(steerAngle) > 0.01) {
+            const turningRadius = wheelBase / Math.tan(Math.abs(steerAngle));
+            const angularVelocity = currentSpeed / turningRadius;
+
+            // Rotate car based on steering and speed
+            car.rotation.y += Math.sign(steerAngle) * angularVelocity;
+          }
+
+          // Move car forward/backward in the direction it's facing
+          car.position.x += Math.sin(car.rotation.y) * currentSpeed;
+          car.position.z += Math.cos(car.rotation.y) * currentSpeed;
+        }
+
+        // Keep camera following car
+        camera.position.x = car.position.x;
+        camera.position.z = car.position.z + 10;
+        camera.lookAt(car.position);
+      }
+
+      // Window resize handler
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      // Animation loop
+      function animate() {
+        requestAnimationFrame(animate);
+        updateCar();
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    </script>
+  </body>
+</html>
