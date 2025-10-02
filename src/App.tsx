@@ -4,9 +4,17 @@ import * as THREE from 'three';
 import './App.css';
 import Floor from './components/Floor';
 import Car from './components/Car';
+import Obstacles, { type ObstacleData } from './components/Obstacle';
 
 function App() {
   const [carPosition, setCarPosition] = useState(new THREE.Vector3());
+
+  const obstacles: ObstacleData[] = [
+    { position: [10, 1, 10], size: [2, 2, 2], stoppable: true },
+    { position: [-5, 1.5, 15], size: [1, 3, 1], stoppable: true },
+    { position: [0, 1, 20], size: [3, 2, 1], stoppable: true },
+    { position: [15, 1, -10], size: [2, 2, 2], stoppable: false },
+  ];
 
   return (
     <div className="app">
@@ -20,7 +28,8 @@ function App() {
           <ambientLight intensity={0.15} />
           <directionalLight position={[10, 20, 10]} intensity={0.25} castShadow />
           <Floor carPosition={carPosition} />
-          <Car setCarPosition={setCarPosition} />
+          <Obstacles obstacles={obstacles} />
+          <Car setCarPosition={setCarPosition} obstacles={obstacles} />
         </Suspense>
       </Canvas>
       <div id="info">

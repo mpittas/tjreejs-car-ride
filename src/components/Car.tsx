@@ -3,12 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import CarModel from './CarModel';
 import Lights from './Lights';
+import { type ObstacleData } from './Obstacle';
 
 interface CarProps {
   setCarPosition: (pos: THREE.Vector3) => void;
+  obstacles: ObstacleData[];
 }
 
-const Car = ({ setCarPosition }: CarProps) => {
+const Car = ({ setCarPosition, obstacles }: CarProps) => {
   const carRef = useRef<THREE.Group>(null);
   const rearLeftWheelRef = useRef<THREE.Object3D>(null); // Ref for rear left wheel
   const rearRightWheelRef = useRef<THREE.Object3D>(null); // Ref for rear right wheel
@@ -16,6 +18,18 @@ const Car = ({ setCarPosition }: CarProps) => {
   const [keys, setKeys] = useState<Record<string, boolean>>({});
   const [steerAngle, setSteerAngle] = useState(0);
   const [currentSpeed, setCurrentSpeed] = useState(0);
+
+  // Local bounding box corners (approximate car dimensions)
+  const localCorners = [
+    new THREE.Vector3(-1.4, 0, -1.4),
+    new THREE.Vector3(-1.4, 0, 1.4),
+    new THREE.Vector3(-1.4, 2.1, -1.4),
+    new THREE.Vector3(-1.4, 2.1, 1.4),
+    new THREE.Vector3(1.4, 0, -1.4),
+    new THREE.Vector3(1.4, 0, 1.4),
+    new THREE.Vector3(1.4, 2.1, -1.4),
+    new THREE.Vector3(1.4, 2.1, 1.4),
+  ];
 
   const physics = {
     acceleration: 0.008,
@@ -77,13 +91,42 @@ const Car = ({ setCarPosition }: CarProps) => {
 
     // Movement
     if (Math.abs(currentSpeed) > 0.001) {
+      // Calculate potential new position and rotation
+      let newRotationY = carRef.current.rotation.y;
       if (Math.abs(steerAngle) > 0.01) {
         const turningRadius = physics.wheelBase / Math.tan(Math.abs(steerAngle));
         const angularVelocity = currentSpeed / turningRadius;
-        carRef.current.rotation.y += Math.sign(steerAngle) * angularVelocity;
+        newRotationY += Math.sign(steerAngle) * angularVelocity;
       }
-      carRef.current.position.x += Math.sin(carRef.current.rotation.y) * currentSpeed;
-      carRef.current.position.z += Math.cos(carRef.current.rotation.y) * currentSpeed;
+      const newX = carRef.current.position.x + Math.sin(newRotationY) * currentSpeed;
+      const newZ = carRef.current.position.z + Math.cos(newRotationY) * currentSpeed;
+
+      // Compute potential car AABB
+      const tempMatrix = new THREE.Matrix4().makeRotationY(newRotationY).setPosition(newX, carRef.current.position.y, newZ);
+      const newWorldCorners = localCorners.map(corner => corner.clone().applyMatrix4(tempMatrix));
+      const carAABB = new THREE.Box3().setFromPoints(newWorldCorners);
+
+      // Check collision with obstacles
+      let collision = false;
+      for (const obstacle of obstacles) {
+        if (!obstacle.stoppable) continue;
+        const halfSize = new THREE.Vector3(...obstacle.size).multiplyScalar(0.5);
+        const obstaclePos = new THREE.Vector3(...obstacle.position);
+        const obstacleBox = new THREE.Box3(obstaclePos.clone().sub(halfSize), obstaclePos.clone().add(halfSize));
+        if (carAABB.intersectsBox(obstacleBox)) {
+          collision = true;
+          break;
+        }
+      }
+
+      if (!collision) {
+        carRef.current.rotation.y = newRotationY;
+        carRef.current.position.x = newX;
+        carRef.current.position.z = newZ;
+      } else {
+        // Stop the car
+        setCurrentSpeed(0);
+      }
     }
 
     // Update car position for floor
