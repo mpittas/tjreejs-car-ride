@@ -19,19 +19,20 @@ function App() {
   return (
     <div className="app">
       <Canvas
-        camera={{ position: [0, 15, 10], fov: 75 }}
+        camera={{ position: [0, 10, 10], fov: 80 }}
         shadows
         gl={{ antialias: true }}
-        scene={{ background: new THREE.Color(0x000520), fog: new THREE.Fog(0x000520, 30, 100) }}
+        scene={{ background: new THREE.Color(0x001030), fog: new THREE.Fog(0x001030, 30, 100) }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.15} />
-          <directionalLight position={[10, 20, 10]} intensity={0.25} castShadow />
+          <ambientLight intensity={0.6} />
+          <directionalLight position={[10, 20, 10]} intensity={1} castShadow />
           <Floor carPosition={carPosition} />
           <Obstacles obstacles={obstacles} />
           <Car setCarPosition={setCarPosition} obstacles={obstacles} />
         </Suspense>
       </Canvas>
+      
       <div id="info">
         <strong>Controls:</strong><br />
         W/↑ - Forward<br />

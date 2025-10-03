@@ -22,7 +22,7 @@ const Lights = () => {
           float normalizedPos = (vPosition.y + 2.0) / 4.0;
           float lengthFade = pow(1.0 - normalizedPos, 0.7);
           float alpha = smoothstep(0.0, 1.0, (1.0 - distFromCenter) * lengthFade);
-          gl_FragColor = vec4(vec3(0.7, 0.7, 0.45), pow(alpha, 2.0) * 0.25);
+          gl_FragColor = vec4(vec3(0.7, 0.7, 0.45), pow(alpha, 2.0) * 0.5);
         }
       `,
       transparent: true,
@@ -54,13 +54,13 @@ const Lights = () => {
           </mesh>
 
           {/* Point light */}
-          <pointLight position={[x, 0.6, 1.5]} color={0xaaaa88} intensity={1} distance={4} />
+          <pointLight position={[x, 0.6, 1.5]} color={0xaaaa88} intensity={2} distance={4} />
 
           {/* Spotlight */}
           <spotLight
             position={[x, 0.6, 1.5]}
             color={0xaaaa88}
-            intensity={2}
+            intensity={4}
             angle={Math.PI / 6}
             penumbra={0.3}
             decay={1.5}

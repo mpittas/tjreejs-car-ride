@@ -15,8 +15,8 @@ const Floor = ({ carPosition }: FloorProps) => {
       uniforms: {
         uCameraPos: { value: new THREE.Vector3() },
         uGridSize: { value: 10.0 },
-        uGridColor: { value: new THREE.Color(0xaaaaaa) },
-        uGroundColor: { value: new THREE.Color(0x1a4d1a) },
+        uGroundColor: { value: new THREE.Color(0xb89f7b) },
+        uGridOpacity: { value: 0.8 },
       },
       vertexShader: `
         varying vec3 vWorldPosition;
@@ -29,8 +29,8 @@ const Floor = ({ carPosition }: FloorProps) => {
       fragmentShader: `
         uniform vec3 uCameraPos;
         uniform float uGridSize;
-        uniform vec3 uGridColor;
         uniform vec3 uGroundColor;
+        uniform float uGridOpacity;
         varying vec3 vWorldPosition;
 
         void main() {
@@ -43,8 +43,11 @@ const Floor = ({ carPosition }: FloorProps) => {
           float fadeFactor = 1.0 - smoothstep(80.0, 200.0, dist);
           gridStrength *= fadeFactor;
 
-          vec3 color = mix(uGroundColor, uGridColor, gridStrength * 0.7);
-          gl_FragColor = vec4(color, 1.0);
+          // Calculate grid color as a slightly darker version of ground color
+          vec3 gridColor = uGroundColor * 0.8;
+          vec3 color = mix(uGroundColor, gridColor, gridStrength * 0.7);
+          float alpha = mix(1.0, uGridOpacity, gridStrength * 0.7);
+          gl_FragColor = vec4(color, alpha);
         }
       `,
       side: THREE.DoubleSide,
