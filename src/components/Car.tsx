@@ -14,6 +14,8 @@ const Car = ({ setCarPosition, obstacles }: CarProps) => {
   const carRef = useRef<THREE.Group>(null);
   const rearLeftWheelRef = useRef<THREE.Object3D>(null); // Ref for rear left wheel
   const rearRightWheelRef = useRef<THREE.Object3D>(null); // Ref for rear right wheel
+  const frontLeftWheelRef = useRef<THREE.Object3D>(null); // Ref for front left wheel
+  const frontRightWheelRef = useRef<THREE.Object3D>(null); // Ref for front right wheel
   const { camera } = useThree();
   const [keys, setKeys] = useState<Record<string, boolean>>({});
   const [steerAngle, setSteerAngle] = useState(0);
@@ -69,13 +71,13 @@ const Car = ({ setCarPosition, obstacles }: CarProps) => {
 
     setSteerAngle(prev => prev + (targetSteerAngle - prev) * physics.steerSpeed);
 
-    // Update wheel rotation
-    const wheels = carRef.current.children.filter(child => child.userData.isWheel);
-    wheels.forEach(wheel => {
-      if (wheel instanceof THREE.Mesh) {
-        wheel.rotation.y = steerAngle;
-      }
-    });
+    // Update front wheel rotation for steering
+    if (frontLeftWheelRef.current) {
+      frontLeftWheelRef.current.rotation.y = steerAngle;
+    }
+    if (frontRightWheelRef.current) {
+      frontRightWheelRef.current.rotation.y = steerAngle;
+    }
 
     // Acceleration
     let targetAcceleration = 0;
@@ -142,7 +144,7 @@ const Car = ({ setCarPosition, obstacles }: CarProps) => {
 
   return (
     <group ref={carRef}>
-      <CarModel rearLeftWheelRef={rearLeftWheelRef} rearRightWheelRef={rearRightWheelRef} />
+      <CarModel rearLeftWheelRef={rearLeftWheelRef} rearRightWheelRef={rearRightWheelRef} frontLeftWheelRef={frontLeftWheelRef} frontRightWheelRef={frontRightWheelRef} />
       <Lights />
     </group>
   );

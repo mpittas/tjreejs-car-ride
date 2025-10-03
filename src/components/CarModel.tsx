@@ -4,9 +4,11 @@ import * as THREE from 'three';
 interface CarModelProps {
   rearLeftWheelRef: RefObject<THREE.Object3D | null>;
   rearRightWheelRef: RefObject<THREE.Object3D | null>;
+  frontLeftWheelRef: RefObject<THREE.Object3D | null>;
+  frontRightWheelRef: RefObject<THREE.Object3D | null>;
 }
 
-const CarModel = ({ rearLeftWheelRef, rearRightWheelRef }: CarModelProps) => {
+const CarModel = ({ rearLeftWheelRef, rearRightWheelRef, frontLeftWheelRef, frontRightWheelRef }: CarModelProps) => {
   const carRef = useRef<THREE.Group>(null);
 
   // Helper to create mesh with shadow
@@ -37,6 +39,13 @@ const CarModel = ({ rearLeftWheelRef, rearRightWheelRef }: CarModelProps) => {
       rearLeftWheelRef.current = wheel;
     } else if (index === 3) { // Assuming index 3 is rear-right
       rearRightWheelRef.current = wheel;
+    }
+
+    // Attach refs to front wheels
+    if (index === 0) { // front left
+      frontLeftWheelRef.current = wheel;
+    } else if (index === 1) { // front right
+      frontRightWheelRef.current = wheel;
     }
     return wheel;
   });
