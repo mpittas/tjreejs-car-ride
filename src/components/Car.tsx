@@ -37,7 +37,8 @@ const Car = ({ setCarPosition, obstacles }: CarProps) => {
     friction: 0.96,
     maxSteerAngle: 0.6,
     steerSpeed: 0.08,
-    wheelBase: 2
+    wheelBase: 2,
+    bounceDamping: 0.7
   };
 
   useEffect(() => {
@@ -124,8 +125,8 @@ const Car = ({ setCarPosition, obstacles }: CarProps) => {
         carRef.current.position.x = newX;
         carRef.current.position.z = newZ;
       } else {
-        // Stop the car
-        setCurrentSpeed(0);
+        // Bounce back smoothly
+        setCurrentSpeed(prev => -prev * physics.bounceDamping);
       }
     }
 
