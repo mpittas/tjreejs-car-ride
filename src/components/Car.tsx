@@ -136,10 +136,11 @@ const Car = ({ setCarPosition, obstacles }: CarProps) => {
     setCarPosition(carRef.current.position.clone());
 
 
-    // Camera follows car
+    // Camera follows car from behind
     camera.position.x = carRef.current.position.x;
-    camera.position.z = carRef.current.position.z + 10;
-    camera.lookAt(carRef.current.position);
+    camera.position.y = carRef.current.position.y + 8;
+    camera.position.z = carRef.current.position.z - 12;
+    camera.lookAt(carRef.current.position.clone().add(new THREE.Vector3(0, 0, 5)));
   });
 
   return (

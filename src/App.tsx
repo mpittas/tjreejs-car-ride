@@ -19,7 +19,7 @@ function App() {
   return (
     <div className="app">
       <Canvas
-        camera={{ position: [0, 10, 10], fov: 80 }}
+        camera={{ position: [0, 8, -12], fov: 70 }}
         shadows
         gl={{ antialias: true }}
         scene={{ background: new THREE.Color(0x001030), fog: new THREE.Fog(0x001030, 30, 100) }}
