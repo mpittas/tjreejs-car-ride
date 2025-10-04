@@ -5,6 +5,7 @@ import './App.css';
 import Floor from './components/Floor';
 import Car from './components/Car';
 import Obstacles, { type ObstacleData } from './components/Obstacle';
+import TestCarModel from './components/TestCarModel';
 
 function App() {
   const [carPosition, setCarPosition] = useState(new THREE.Vector3());
@@ -25,11 +26,18 @@ function App() {
         scene={{ background: new THREE.Color(0x001030), fog: new THREE.Fog(0x001030, 30, 100) }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[10, 20, 10]} intensity={1} castShadow />
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[5, 10, 5]} intensity={3} castShadow />
+          <pointLight position={[0, 5, 0]} intensity={4} />
+          <spotLight position={[0, 8, 0]} angle={0.6} penumbra={0.5} intensity={1.5} castShadow />
+          <directionalLight position={[-8, 6, 0]} intensity={2} />
+          <pointLight position={[10, 3, 5]} intensity={3} />
+          {/* Scene axis helper */}
+          <axesHelper args={[10]} />
           <Floor carPosition={carPosition} />
-          <Obstacles obstacles={obstacles} />
-          <Car setCarPosition={setCarPosition} obstacles={obstacles} />
+          {/* <Obstacles obstacles={obstacles} />
+          <Car setCarPosition={setCarPosition} obstacles={obstacles} /> */}
+          <TestCarModel />
         </Suspense>
       </Canvas>
       
@@ -37,8 +45,15 @@ function App() {
         <strong>Controls:</strong><br />
         W/↑ - Forward<br />
         S/↓ - Backward<br />
-        A/← - Steer Left<br />
-        D/→ - Steer Right
+        A/← - Steer Left (wheels turn left)<br />
+        D/→ - Steer Right (wheels turn right)<br />
+        <br />
+        <strong>Movement:</strong><br />
+        Car moves forward in the direction it's facing<br />
+        Steering affects front wheels rotation<br />
+        <br />
+        <strong>Car Info:</strong><br />
+        <span id="car-size">Loading car dimensions...</span>
       </div>
     </div>
   );
